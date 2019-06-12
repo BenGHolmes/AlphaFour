@@ -1,4 +1,5 @@
-from alphafour import Agent, Human, ConnectGame
+from agent import Agent, Human
+from connectgame import ConnectGame
 
 def play_game():
     p1 = Human(name="Ben")
