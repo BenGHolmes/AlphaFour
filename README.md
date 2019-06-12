@@ -7,7 +7,7 @@ To play a game, run:
 play_game.py
 ~~~
 
-Both players are currently humans, so this isn't very exciting.
+Both players are currently humans.. And you can't win.. This isn't very exciting yet.
 
 # Getting Started (The Goal)
 To play a game, simply run:
