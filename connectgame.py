@@ -23,7 +23,7 @@ class ConnectGame(object):
         self._player2 = player2
         self._move_delay = move_delay
 
-        self._turn = 1
+        self._turn = 0
         self._game_state = np.zeros((10, 6, 7))  # 10, 6x7 boards to store the last 5 moves for each player
         self._game_board = np.zeros((6,7))  # A single, printable game board that humans can read
 
@@ -34,12 +34,12 @@ class ConnectGame(object):
         while not self.game_finished():
             self.print_board()
 
-            if self._turn % 2 == 1:
+            if self._turn % 2 == 0:
                 curr_player = self._player1
             else:
                 curr_player = self._player2
 
-            move = curr_player.get_move()
+            move = curr_player.get_move(self._game_state, self._game_board)
 
             if self.validate_move(move):
                 self.commit_move(move)
@@ -101,10 +101,10 @@ class ConnectGame(object):
 
         for row in self._game_board:
             row_str = ['X' if x == 1 else 'O' if x == 2 else '_' for x in row]
-            print('|', '|'.join(row_str), '|')
+            print('|' + '|'.join(row_str) + '|')
 
-        print('|', '|'.join(range(7)), '|')
+        print('|0|1|2|3|4|5|6|')
     
-        print('\n\n{self._player1._name}: X, {self._player2._name}: O')
+        print('\n\n{}: X, {}: O'.format(self._player1._name, self._player2._name))
 
 
