@@ -1,4 +1,4 @@
-from agent import Agent, Human
+from agents import Agent, Human
 from connectgame import ConnectGame
 
 def play_game():

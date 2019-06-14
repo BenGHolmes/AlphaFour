@@ -1,5 +1,5 @@
 import numpy as np
-from agent import Agent, Human
+from agents import Agent, Human
 
 class ConnectGame(object):
     """An instance of a Connect Four game. 
@@ -60,13 +60,27 @@ class ConnectGame(object):
     def validate_move(self, move: np.ndarray) -> bool:
         """Validates whether or not the proposed move is valid.
 
-        TODO: All the logic for this
         Args:
             move (np.ndarray): The proposed move, with a one in the row,col of
             the new piece, and zeros in all other squares.
+
+        Returns:
+            is_valid (bool): True if the proposed move is valid, else False
         """
 
-        return True
+        # Get row and column of new move
+        mov_idx = np.argmax(move)
+        row = int(mov_idx / 7)
+        col = int(mov_idx % row) if row else mov_idx
+
+        print(row, col)
+
+        # Move is valid if that square is open, and either row==5 (bottom) or 
+        # the square below is full
+        is_empty = self._game_board[row, col] == 0
+        valid_height = ((row == 5) or self._game_board[row+1, col] != 0)
+        
+        return (is_empty and valid_height)
 
 
     def commit_move(self, move: np.ndarray) -> None:
