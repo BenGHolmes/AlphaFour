@@ -47,13 +47,82 @@ class ConnectGame(object):
             else:
                 curr_player.handle_invalid_move()
 
+        self.print_board()
+
+        if self._winner is not None:
+            # TODO: Cooler artwork for the big winner
+            print("======================")
+            print(self._winner._name, "WINS!")
+            print("======================")
+
+        else:
+            print("======================")
+            print("TIE GAME!")
+            print("======================")
+
+
 
     def game_finished(self) -> bool:
         """Checks the game_state to see if the game has finished.
         
-        TODO: All the logic for this
+        TODO: Find something more efficient, or at the very least more interesting
         """
-        
+
+        # Define flattened array equivalents of horizontal, front slash (/) and back
+        # slash (\) lines of 4 in the 2D array relative to starting point 0.
+        search_arr = self._game_board.flatten()
+        vertical_window = np.array([0,7,14,21])  # 0 is top point
+        horizontal_window = np.array([0,1,2,3])  # 0 is left most point
+        f_slash_window = np.array([0,6,12,18])  # 0 is top right point
+        b_slash_window = np.array([0,8,16,24])  # 0 is top left point
+
+        winner = 0
+
+        # Check for vertical wins. Top piece must be in row [0,1,2] and any col [0..6]. In the flattened
+        # array, that corresponds to indices [0:20] inclusive.
+        for start in range(21):
+            window = search_arr[vertical_window + start]
+            if window.max() == window.min() and window.min() != 0:
+                winner = window[0]
+                break
+
+        # Check for forward diagonal (/) wins. Top right piece must be in row [0,1,2] and col [3..6].
+        if winner == 0:
+            for start in [col + 7*row for col in range(3,7) for row in range(3)]:
+                window = search_arr[f_slash_window + start]
+                if window.max() == window.min() and window.min() != 0:
+                    winner = window[0]
+                    break
+
+        # Check for back diagonal (\) wins. Top left piece must be in row [0,1,2] and col [0..3].
+        if winner == 0:
+            for start in [col + 7*row for col in range(4) for row in range(3)]:
+                window = search_arr[b_slash_window + start]
+                if window.max() == window.min() and window.min() != 0:
+                    winner = window[0]
+                    break
+
+        # Check for horizontal wins. Left most piece must be in row [0..5] and col [0..3].
+        if winner == 0:
+            for start in [col + 7*row for col in range(4) for row in range(6)]:
+                window = search_arr[horizontal_window + start]
+                if window.max() == window.min() and window.min() != 0:
+                    winner = window[0]
+                    break
+
+        if winner == 1:
+            self._winner = self._player1
+            return True
+
+        if winner == 2:
+            self._winner = self._player2
+            return True
+
+        # If no more spaces, game is over but there is no winner
+        if 0 not in search_arr:
+            self._winner = None
+            return True
+
         return False
 
 
@@ -75,7 +144,7 @@ class ConnectGame(object):
         # Get row and column of new move
         mov_idx = np.argmax(move)
         row = int(mov_idx / 7)
-        col = int(mov_idx % row) if row else mov_idx
+        col = int(mov_idx % 7) if row else mov_idx
 
         # Move is valid if that square is open, and either row==5 (bottom) or 
         # the square below is occupied
@@ -115,12 +184,14 @@ class ConnectGame(object):
         Prints the current game board with player one as X and player two as O.
         """
 
+        print("\n\n===============\n\n")
+
         for row in self._game_board:
             row_str = ['X' if x == 1 else 'O' if x == 2 else '_' for x in row]
             print('|' + '|'.join(row_str) + '|')
 
         print('|0|1|2|3|4|5|6|')
     
-        print('\n\n{}: X, {}: O'.format(self._player1._name, self._player2._name))
+        print('\n{}: X, {}: O'.format(self._player1._name, self._player2._name))
 
 
