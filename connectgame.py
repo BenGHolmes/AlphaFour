@@ -39,7 +39,7 @@ class ConnectGame(object):
             else:
                 curr_player = self._player2
 
-            move = curr_player.get_move(self._game_state, self._game_board)
+            move = curr_player.get_move(self._game_state, self._game_board, self._turn % 2 + 1)
 
             if self.validate_move(move):
                 self.commit_move(move)

@@ -12,7 +12,7 @@ class Human(Agent):
         self._name = name
 
 
-    def get_move(self, game_state: np.ndarray, game_board: np.ndarray) -> np.ndarray:
+    def get_move(self, game_state: np.ndarray, game_board: np.ndarray, agent_marker: int) -> np.ndarray:
         """Prompts the user for their next move.
 
         Prompts the user for what column to add the piece to, calculates the 
@@ -27,6 +27,8 @@ class Human(Agent):
             game_board (np.ndarray): A human readable version of the board, with all
                 currently played pieces represented as a 1 or 2 for players one and 
                 two respectively. All open spaces are 0
+            agent_marker (int): Integer indicating which value in game_board corresponds
+                to this Agent's pieces
 
         Returns:
             An ndarray representing the move, with a 1 in the row,col of the new
