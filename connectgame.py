@@ -68,15 +68,17 @@ class ConnectGame(object):
             is_valid (bool): True if the proposed move is valid, else False
         """
 
+        # Return False if there is not a single entry with value 1
+        if move.sum() != 1 or move.max() != 1:
+            return False
+
         # Get row and column of new move
         mov_idx = np.argmax(move)
         row = int(mov_idx / 7)
         col = int(mov_idx % row) if row else mov_idx
 
-        print(row, col)
-
         # Move is valid if that square is open, and either row==5 (bottom) or 
-        # the square below is full
+        # the square below is occupied
         is_empty = self._game_board[row, col] == 0
         valid_height = ((row == 5) or self._game_board[row+1, col] != 0)
         
