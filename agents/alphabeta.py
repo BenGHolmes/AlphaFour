@@ -1,6 +1,7 @@
 import numpy as np
 from agents import Agent
 import time
+import math
 
 class AlphaBeta(Agent):
     """Agent that implements minimax with alpha-beta pruning to select its next move.
@@ -37,7 +38,7 @@ class AlphaBeta(Agent):
         minimax_board = self.get_minimax_board(game_board, agent_marker)
 
         start = time.time()
-        move_val, move = self.alpha_beta(minimax_board, depth=1)
+        move_val, move = self.alpha_beta(minimax_board, depth=4)
         end = time.time()
 
         print("Found optimal move with value: {}, in {}s".format(move_val, (end - start)))
@@ -82,12 +83,15 @@ class AlphaBeta(Agent):
             state = next_states[best_idx]
             next_states = np.delete(next_states, best_idx, 0)
 
-            val, _ = self.alpha_beta(state, alpha=alpha, beta=beta, depth=depth-1, max_player=not max_player)
+            if math.isinf(self.get_static_value(state)):
+                val = self.get_static_value(state)
+            else:
+                val, _ = self.alpha_beta(state, alpha=alpha, beta=beta, depth=depth-1, max_player=not max_player)
 
             if max_player and val > alpha:
                 alpha = val
                 best_move = legal_moves[best_idx]
-            elif val < beta:
+            elif not max_player and val < beta:
                 best_move = legal_moves[best_idx]
                 beta = val
 
@@ -142,7 +146,52 @@ class AlphaBeta(Agent):
             value (int): The static value of the current position.
         """
 
-        return np.random.randint(100)
+        value = 0
+
+        search_arr = minimax_board.flatten()
+        vertical_window = np.array([0,7,14,21])  # 0 is top point
+        horizontal_window = np.array([0,1,2,3])  # 0 is left most point
+        f_slash_window = np.array([0,6,12,18])  # 0 is top right point
+        b_slash_window = np.array([0,8,16,24])  # 0 is top left point
+
+        # Check for vertical wins. Top piece must be in row [0,1,2] and any col [0..6]. In the flattened
+        # array, that corresponds to indices [0:20] inclusive.
+        for start in range(21):
+            window = search_arr[vertical_window + start]
+            if not (1 in window and -1 in window):
+                win_val = window.sum()
+                if abs(win_val) == 4: 
+                    return np.inf * win_val
+                value += win_val
+
+        # Check for forward diagonal (/) wins. Top right piece must be in row [0,1,2] and col [3..6].
+        for start in [col + 7*row for col in range(3,7) for row in range(3)]:
+            window = search_arr[f_slash_window + start]
+            if not (1 in window and -1 in window):
+                win_val = window.sum()
+                if abs(win_val) == 4: 
+                    return np.inf * win_val
+                value += win_val
+
+        # Check for back diagonal (\) wins. Top left piece must be in row [0,1,2] and col [0..3].
+        for start in [col + 7*row for col in range(4) for row in range(3)]:
+            window = search_arr[b_slash_window + start]
+            if not (1 in window and -1 in window):
+                win_val = window.sum()
+                if abs(win_val) == 4: 
+                    return np.inf * win_val
+                value += win_val
+
+        # Check for horizontal wins. Left most piece must be in row [0..5] and col [0..3].
+        for start in [col + 7*row for col in range(4) for row in range(6)]:
+            window = search_arr[horizontal_window + start]
+            if not (1 in window and -1 in window):
+                win_val = window.sum()
+                if abs(win_val) == 4: 
+                    return np.inf * win_val
+                value += win_val
+
+        return value
 
 
     def get_legal_moves(self, minimax_board: np.ndarray) -> np.ndarray:
