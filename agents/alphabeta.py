@@ -4,11 +4,8 @@ import time
 import math
 
 class AlphaBeta(Agent):
-    """Agent that implements minimax with alpha-beta pruning to select its next move.
+    """Agent that implements minimax with alpha-beta pruning to select its next move."""
 
-
-
-    """
     def __init__(self, name: str = None) -> None:
         self._name = name
 
@@ -83,6 +80,7 @@ class AlphaBeta(Agent):
             state = next_states[best_idx]
             next_states = np.delete(next_states, best_idx, 0)
 
+            # Only recurse farther if the current state is not an end game state
             if math.isinf(self.get_static_value(state)):
                 val = self.get_static_value(state)
             else:
@@ -133,21 +131,24 @@ class AlphaBeta(Agent):
         return idx
 
         
-    def get_static_value(self, minimax_board: np.ndarray) -> int:
+    def get_static_value(self, minimax_board: np.ndarray) -> float:
         """Returns the static value of minimax_board.
 
-        TODO: Define value
+        For each possible way to get four in a row, check if the line contains only 1 or -1.
+        If that row contains pieces from only one player, add the sum of their pieces to value.
+        If either player has 4 in a row, return +/- inf
 
         Args:
             minimax_board (np.ndarray): The current minimax board with maximing player as 1
                 and minimizing player as -1.
 
         Returns:
-            value (int): The static value of the current position.
+            value (float): The static value of the current position.
         """
 
         value = 0
 
+        # Search windows for each possible type of four in a row in 2D
         search_arr = minimax_board.flatten()
         vertical_window = np.array([0,7,14,21])  # 0 is top point
         horizontal_window = np.array([0,1,2,3])  # 0 is left most point
