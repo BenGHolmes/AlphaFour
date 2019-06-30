@@ -34,8 +34,16 @@ class Human(Agent):
             An ndarray representing the move, with a 1 in the row,col of the new
             piece, and all other entries zero
         """
-
-        col_idx = int(input("{}'s move:".format(self._name)))
+        col_idx = None
+        while col_idx is None:
+            try:
+                move_string = input("{}'s move:".format(self._name))
+                col_idx = int(move_string)
+            except KeyboardInterrupt:
+                exit()
+            except:
+                print('Invalid move: {}'.format(move_string))
+                pass
 
         new_state = self.get_new_state(col_idx, game_board)
         return new_state
