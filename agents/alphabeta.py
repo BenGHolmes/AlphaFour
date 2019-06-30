@@ -49,6 +49,8 @@ class AlphaBeta(Agent):
         Performs minimax starting at the current position and ending after looking depth moves ahead, or when all leaf
         nodes are end_game states.
 
+        TODO: If multiple winning moves, it picks the first one. Change so agent chooses the quickest win
+
         Args:
             minimax_board (np.ndarray): 2D array representing the current pieces as 1 or -1 if they
                 are for the maximizing or minimizing player respectively.
