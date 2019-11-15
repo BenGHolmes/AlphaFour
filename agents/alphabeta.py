@@ -35,7 +35,7 @@ class AlphaBeta(Agent):
         minimax_board = self.get_minimax_board(game_board, agent_marker)
 
         start = time.time()
-        move_val, move = self.alpha_beta(minimax_board, depth=4)
+        move_val, move = self.alpha_beta(minimax_board, depth=5)
         end = time.time()
 
         print("Found optimal move with value: {}, in {}s".format(move_val, (end - start)))
