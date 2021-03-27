@@ -90,7 +90,6 @@ class AlphaBeta(Agent):
             move (np.ndarray): A 6x7 numpy array with a 1 in the spot of the move to take from the current
                 node that will result in the optimal value.
         """
-
         legal_moves = helpers.get_legal_moves(game_board)
 
         if legal_moves.size == 0 or depth == 0:
@@ -122,7 +121,6 @@ class AlphaBeta(Agent):
 
             if beta < alpha:
                 break
-
 
         if max_player:
             return alpha, best_move
@@ -176,9 +174,13 @@ class AlphaBeta(Agent):
             return 0
         
         window_sums = uncontested_windows.sum(axis=1)
-        return (abs(window_sums) * window_sums**2 / window_sums).sum()
 
-        return value
+        if window_sums.max() == 4:
+            return np.inf
+        elif window_sums.min() == -4:
+            return -np.inf
+        else:
+            return (abs(window_sums) * window_sums**2 / window_sums).sum()
 
 
     def handle_invalid_move(self) -> None:
