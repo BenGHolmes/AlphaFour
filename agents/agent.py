@@ -7,7 +7,7 @@ class Agent(object):
         raise NotImplementedError
 
 
-    def get_move(self, game_state: np.ndarray, game_board: np.ndarray) -> np.ndarray:
+    def get_move(self, game_board: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
 

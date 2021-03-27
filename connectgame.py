@@ -7,7 +7,7 @@ class ConnectGame(object):
     Responsible for handling logic of player turns and end game results
     """    
 
-    def __init__(self, player1: Agent, player2: Agent, move_delay: int=0) -> None:
+    def __init__(self, player1: Agent, player2: Agent, move_delay: int=3) -> None:
         """Initializes a game instance.
 
         Args:
@@ -24,8 +24,36 @@ class ConnectGame(object):
         self._move_delay = move_delay
 
         self._turn = 0
-        self._game_state = np.zeros((10, 6, 7))  # 10, 6x7 boards to store the last 5 moves for each player
-        self._game_board = np.zeros((6,7))  # A single, printable game board that humans can read
+
+        # Representation of the game board. Current player's positions are 1, opponent is -1
+        self._game_board = np.zeros((6,7))  
+
+        # Initialize array of indices used to check for winning groups. This is kinda ugly,
+        # but it's more than twice as fast as building them on the fly, so it's worth it.
+        self._window_indices = np.array([
+            # Horizontal groups of 4
+            0,1,2,3,       1,2,3,4,       2,3,4,5,       3,4,5,6,     # Row 1
+            7,8,9,10,      8,9,10,11,     9,10,11,12,    10,11,12,13, # Row 2
+            14,15,16,17,   15,16,17,18,   16,17,18,19,   17,18,19,20, # Row 3
+            21,22,23,24,   22,23,24,25,   23,24,25,26,   24,25,26,27, # Row 4
+            28,29,30,31,   29,30,31,32,   30,31,32,33,   31,32,33,34, # Row 5
+            35,36,37,38,   36,37,38,39,   37,38,39,40,   38,39,40,41, # Row 6
+            
+            # Vertical groups of 4
+            0,7,14,21,     1,8,15,22,     2,9,16,23,     3,10,17,24,    4,11,18,25,    5,12,19,26,    6,13,20,27,  # Row 1-4
+            7,14,21,28,    8,15,22,29,    9,16,23,30,    10,17,24,31,   11,18,25,32,   12,19,26,33,   13,20,27,34, # Row 2-5
+            14,21,28,35,   15,22,29,36,   16,23,30,37,   17,24,31,38,   18,25,32,39,   19,26,33,40,   20,27,34,41, # Row 3-6
+            
+            # Diagonal up right
+            21,15,9,3,     22,16,10,4,    23,17,11,5,    24,18,12,6,  # Row 1-4
+            28,22,16,10,   29,23,17,11,   30,24,18,12,   31,25,19,13, # Row 2-5
+            35,29,23,17,   36,30,24,18,   37,31,25,19,   38,32,26,20, # Row 3-6
+            
+            # Diagonal down right
+            0,8,16,24,     1,9,17,25,     2,10,18,26,    3,11,19,27,  # Row 1-4
+            7,15,23,31,    8,16,24,32,    9,17,25,33,    10,18,26,34, # Row 2-5
+            14,22,30,38,   15,23,31,39,   16,24,32,40,   17,25,33,41  # Row 3-6
+        ])
 
 
     def play_game(self) -> None:
@@ -39,11 +67,12 @@ class ConnectGame(object):
             else:
                 curr_player = self._player2
 
-            move = curr_player.get_move(self._game_state, self._game_board, self._turn % 2 + 1)
+            move = curr_player.get_move(self._game_board, self._turn % 2 + 1)
 
             if self.validate_move(move):
-                self.commit_move(move)
-                self._turn += 1
+                self._game_board += move  # Add a 1 for current player to the game board
+                self._game_board *= -1    # Flip signs to represent current state
+                self._turn += 1           # Incremenet turn
             else:
                 curr_player.handle_invalid_move()
 
@@ -65,64 +94,29 @@ class ConnectGame(object):
     def game_finished(self) -> bool:
         """Checks the game_state to see if the game has finished.
         
-        TODO: Find something more efficient, or at the very least more interesting
+        Since this check comes before each turn, we only need to check if the player who
+        played last (meaning their pieces have value -1) won on the last turn.
         """
 
-        # Define flattened array equivalents of horizontal, front slash (/) and back
-        # slash (\) lines of 4 in the 2D array relative to starting point 0.
-        search_arr = self._game_board.flatten()
-        vertical_window = np.array([0,7,14,21])  # 0 is top point
-        horizontal_window = np.array([0,1,2,3])  # 0 is left most point
-        f_slash_window = np.array([0,6,12,18])  # 0 is top right point
-        b_slash_window = np.array([0,8,16,24])  # 0 is top left point
+        windows = self._game_board.flatten()[self._window_indices].reshape(-1,4)
+        uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
+        if uncontested_windows.size > 0:
+            min_sum = uncontested_windows.sum(axis=1).min()
 
-        winner = 0
+            if min_sum == -4:
+                if self._turn%2 == 0:
+                    # If it is now player1's turn, then player2 won last turn
+                    self._winner = self._player2
+                else:
+                    # Otherwise player1 won last turn
+                    self._winner = self._player1
 
-        # Check for vertical wins. Top piece must be in row [0,1,2] and any col [0..6]. In the flattened
-        # array, that corresponds to indices [0:20] inclusive.
-        for start in range(21):
-            window = search_arr[vertical_window + start]
-            if window.max() == window.min() and window.min() != 0:
-                winner = window[0]
-                break
+                return True
 
-        # Check for forward diagonal (/) wins. Top right piece must be in row [0,1,2] and col [3..6].
-        if winner == 0:
-            for start in [col + 7*row for col in range(3,7) for row in range(3)]:
-                window = search_arr[f_slash_window + start]
-                if window.max() == window.min() and window.min() != 0:
-                    winner = window[0]
-                    break
-
-        # Check for back diagonal (\) wins. Top left piece must be in row [0,1,2] and col [0..3].
-        if winner == 0:
-            for start in [col + 7*row for col in range(4) for row in range(3)]:
-                window = search_arr[b_slash_window + start]
-                if window.max() == window.min() and window.min() != 0:
-                    winner = window[0]
-                    break
-
-        # Check for horizontal wins. Left most piece must be in row [0..5] and col [0..3].
-        if winner == 0:
-            for start in [col + 7*row for col in range(4) for row in range(6)]:
-                window = search_arr[horizontal_window + start]
-                if window.max() == window.min() and window.min() != 0:
-                    winner = window[0]
-                    break
-
-        if winner == 1:
-            self._winner = self._player1
-            return True
-
-        if winner == 2:
-            self._winner = self._player2
-            return True
-
-        # If no more spaces, game is over but there is no winner
-        if 0 not in search_arr:
+        if 0 not in self._game_board:
             self._winner = None
             return True
-
+        
         return False
 
 
@@ -154,30 +148,6 @@ class ConnectGame(object):
         return (is_empty and valid_height)
 
 
-    def commit_move(self, move: np.ndarray) -> None:
-        """Adds the validated move to the game_state and game_board.
-        
-        Pushes the current move to the top of the players recent move stack, and adds
-        either a 1 or a 2 to the game_board in the appropriate spot.
-
-        Args:
-            move (np.ndarray): The new, validated move. 1 at the row,col of the new piece, and
-                0 elsewhere.
-        """
-
-        player_num = (self._turn % 2) + 1  # Value added to game_board
-
-        self._game_board[move==1] = player_num
-
-        if player_num == 1:
-            # Delete the oldest history of player one's moves and inset new one at position 0
-            self._game_state = np.delete(self._game_state, 4, 0)  
-            self._game_state = np.insert(self._game_state, 0, move, 0)
-        else:
-            self._game_state = np.delete(self._game_state, 9, 0)
-            self._game_state = np.insert(self._game_state, 5, move, 0)
-
-
     def print_board(self) -> None:
         """Prints the game board to the console.
 
@@ -186,8 +156,17 @@ class ConnectGame(object):
 
         print("\n\n===============\n\n")
 
+        if self._turn % 2 == 0:
+            # P1 is 1, P2 is -1
+            current_marker = 'X'
+            opponent_marker = 'O'
+        else:
+            # P2 is 1, P1 is -1
+            current_marker = 'O'
+            opponent_marker = 'X'
+
         for row in self._game_board:
-            row_str = ['X' if x == 1 else 'O' if x == 2 else '_' for x in row]
+            row_str = [current_marker if x == 1 else  opponent_marker if x == -1 else '_' for x in row]
             print('|' + '|'.join(row_str) + '|')
 
         print('|0|1|2|3|4|5|6|')

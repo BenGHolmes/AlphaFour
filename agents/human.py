@@ -12,7 +12,7 @@ class Human(Agent):
         self._name = name
 
 
-    def get_move(self, game_state: np.ndarray, game_board: np.ndarray, agent_marker: int) -> np.ndarray:
+    def get_move(self, game_board: np.ndarray, agent_marker: int) -> np.ndarray:
         """Prompts the user for their next move.
 
         Prompts the user for what column to add the piece to, calculates the 
