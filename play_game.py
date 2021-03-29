@@ -1,10 +1,11 @@
-from agents import Agent, Human, AlphaBeta
+from agents import Agent, Human, AlphaBeta, MCTS
 from connectgame import ConnectGame
 import argparse
 
 agents = {
     'Human': Human,
-    'AlphaBeta': AlphaBeta
+    'AlphaBeta': AlphaBeta,
+    'MCTS': MCTS
 }
 
 def play_game():
