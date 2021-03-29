@@ -10,36 +10,8 @@ class AlphaBeta(Agent):
     def __init__(self, name: str = None) -> None:
         self._name = name
 
-        # Initialize array of indices used by the static value function. This is kinda ugly,
-        # but it's more than twice as fast as building them on the fly, so it's worth it.
-        self._window_indices = np.array([
-            # Horizontal groups of 4
-            0,1,2,3,       1,2,3,4,       2,3,4,5,       3,4,5,6,     # Row 1
-            7,8,9,10,      8,9,10,11,     9,10,11,12,    10,11,12,13, # Row 2
-            14,15,16,17,   15,16,17,18,   16,17,18,19,   17,18,19,20, # Row 3
-            21,22,23,24,   22,23,24,25,   23,24,25,26,   24,25,26,27, # Row 4
-            28,29,30,31,   29,30,31,32,   30,31,32,33,   31,32,33,34, # Row 5
-            35,36,37,38,   36,37,38,39,   37,38,39,40,   38,39,40,41, # Row 6
-            
-            # Vertical groups of 4
-            0,7,14,21,     1,8,15,22,     2,9,16,23,     3,10,17,24,    4,11,18,25,    5,12,19,26,    6,13,20,27,  # Row 1-4
-            7,14,21,28,    8,15,22,29,    9,16,23,30,    10,17,24,31,   11,18,25,32,   12,19,26,33,   13,20,27,34, # Row 2-5
-            14,21,28,35,   15,22,29,36,   16,23,30,37,   17,24,31,38,   18,25,32,39,   19,26,33,40,   20,27,34,41, # Row 3-6
-            
-            # Diagonal up right
-            21,15,9,3,     22,16,10,4,    23,17,11,5,    24,18,12,6,  # Row 1-4
-            28,22,16,10,   29,23,17,11,   30,24,18,12,   31,25,19,13, # Row 2-5
-            35,29,23,17,   36,30,24,18,   37,31,25,19,   38,32,26,20, # Row 3-6
-            
-            # Diagonal down right
-            0,8,16,24,     1,9,17,25,     2,10,18,26,    3,11,19,27,  # Row 1-4
-            7,15,23,31,    8,16,24,32,    9,17,25,33,    10,18,26,34, # Row 2-5
-            14,22,30,38,   15,23,31,39,   16,24,32,40,   17,25,33,41  # Row 3-6
-        ])
 
-
-
-    def get_move(self, game_board: np.ndarray, agent_marker: int) -> np.ndarray:
+    def get_move(self, game_board: np.ndarray) -> np.ndarray:
         """Recursively runs minimax to determine the best move to make. 
 
         Recursively runs minimax algorithm with alpha-beta pruning starting at the current game state.
@@ -48,13 +20,11 @@ class AlphaBeta(Agent):
         Args:
             game_board (np.ndarray): A human readable version of the board, with all
                 currently played pieces represented as a 1 or 2 for players one and 
-                two respectively. All open spaces are 0
-            agent_marker (int): Integer indicating which value in game_board corresponds
-                to this Agent's pieces
+                two respectively. All open spaces are 0.
 
         Returns:
             An ndarray representing the move, with a 1 in the row,col of the new
-            piece, and all other entries zero
+            piece, and all other entries zero.
         """
 
         start = time.time()
@@ -159,7 +129,7 @@ class AlphaBeta(Agent):
 
         For each possible way to get four in a row, check if the line contains only 1 or -1.
         If that row contains pieces from only one player, add the sum of their pieces to value.
-        If either player has 4 in a row, return +/- inf
+        If either player has 4 in a row, return +/- inf.
 
         Args:
             game_board (np.ndarray): The current minimax board with maximing player as 1
@@ -168,7 +138,7 @@ class AlphaBeta(Agent):
         Returns:
             value (float): The static value of the current position.
         """    
-        windows = game_board.flatten()[self._window_indices].reshape(-1,4)
+        windows = game_board.flatten()[helpers.WINDOW_INDICES].reshape(-1,4)
         uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
         if uncontested_windows.size == 0:
             return 0

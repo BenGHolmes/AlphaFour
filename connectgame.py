@@ -1,63 +1,32 @@
 import numpy as np
 from agents import Agent, Human
+import helpers
 
 class ConnectGame(object):
     """An instance of a Connect Four game. 
 
-    Responsible for handling logic of player turns and end game results
+    Responsible for handling logic of player turns and end game results.
     """    
 
-    def __init__(self, player1: Agent, player2: Agent, move_delay: int=3) -> None:
+    def __init__(self, player1: Agent, player2: Agent) -> None:
         """Initializes a game instance.
 
         Args:
-            player1 (Agent): An Agent instance. player1 will move first
+            player1 (Agent): An Agent instance. player1 will move first.
             player2 (Agent): Another Agnet instance.
-            move_delay (int): The minimum delay in seconds between each move. Can make the 
-                game more watchable if both agents are fast algorithms. If an Agent takes
-                longer than move_delay to finish their turn, the turn will advance as soon 
-                as the Agent submits their move
         """
 
         self._player1 = player1
         self._player2 = player2
-        self._move_delay = move_delay
 
         self._turn = 0
 
         # Representation of the game board. Current player's positions are 1, opponent is -1
         self._game_board = np.zeros((6,7))  
 
-        # Initialize array of indices used to check for winning groups. This is kinda ugly,
-        # but it's more than twice as fast as building them on the fly, so it's worth it.
-        self._window_indices = np.array([
-            # Horizontal groups of 4
-            0,1,2,3,       1,2,3,4,       2,3,4,5,       3,4,5,6,     # Row 1
-            7,8,9,10,      8,9,10,11,     9,10,11,12,    10,11,12,13, # Row 2
-            14,15,16,17,   15,16,17,18,   16,17,18,19,   17,18,19,20, # Row 3
-            21,22,23,24,   22,23,24,25,   23,24,25,26,   24,25,26,27, # Row 4
-            28,29,30,31,   29,30,31,32,   30,31,32,33,   31,32,33,34, # Row 5
-            35,36,37,38,   36,37,38,39,   37,38,39,40,   38,39,40,41, # Row 6
-            
-            # Vertical groups of 4
-            0,7,14,21,     1,8,15,22,     2,9,16,23,     3,10,17,24,    4,11,18,25,    5,12,19,26,    6,13,20,27,  # Row 1-4
-            7,14,21,28,    8,15,22,29,    9,16,23,30,    10,17,24,31,   11,18,25,32,   12,19,26,33,   13,20,27,34, # Row 2-5
-            14,21,28,35,   15,22,29,36,   16,23,30,37,   17,24,31,38,   18,25,32,39,   19,26,33,40,   20,27,34,41, # Row 3-6
-            
-            # Diagonal up right
-            21,15,9,3,     22,16,10,4,    23,17,11,5,    24,18,12,6,  # Row 1-4
-            28,22,16,10,   29,23,17,11,   30,24,18,12,   31,25,19,13, # Row 2-5
-            35,29,23,17,   36,30,24,18,   37,31,25,19,   38,32,26,20, # Row 3-6
-            
-            # Diagonal down right
-            0,8,16,24,     1,9,17,25,     2,10,18,26,    3,11,19,27,  # Row 1-4
-            7,15,23,31,    8,16,24,32,    9,17,25,33,    10,18,26,34, # Row 2-5
-            14,22,30,38,   15,23,31,39,   16,24,32,40,   17,25,33,41  # Row 3-6
-        ])
-
 
     def play_game(self) -> None:
-        """Plays a game of Connect Four"""
+        """Plays a game of Connect Four."""
 
         while not self.game_finished():
             self.print_board()
@@ -67,7 +36,7 @@ class ConnectGame(object):
             else:
                 curr_player = self._player2
 
-            move = curr_player.get_move(self._game_board, self._turn % 2 + 1)
+            move = curr_player.get_move(self._game_board)
 
             if self.validate_move(move):
                 self._game_board += move  # Add a 1 for current player to the game board
@@ -98,7 +67,7 @@ class ConnectGame(object):
         played last (meaning their pieces have value -1) won on the last turn.
         """
 
-        windows = self._game_board.flatten()[self._window_indices].reshape(-1,4)
+        windows = self._game_board.flatten()[helpers.WINDOW_INDICES].reshape(-1,4)
         uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
         if uncontested_windows.size > 0:
             min_sum = uncontested_windows.sum(axis=1).min()
@@ -125,10 +94,10 @@ class ConnectGame(object):
 
         Args:
             move (np.ndarray): The proposed move, with a one in the row,col of
-            the new piece, and zeros in all other squares.
+                the new piece, and zeros in all other squares.
 
         Returns:
-            is_valid (bool): True if the proposed move is valid, else False
+            is_valid (bool): True if the proposed move is valid, else False.
         """
 
         # Return False if there is not a single entry with value 1

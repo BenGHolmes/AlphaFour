@@ -4,71 +4,41 @@ class MCTS(Agent):
     def __init__(self, name: str = None) -> None:
         self._name = name
 
-    def get_move(self, game_board: np.ndarray, agent_marker: int) -> np.ndarray:
 
+    def get_move(self, game_board: np.ndarray, agent_marker: int) -> np.ndarray:
+        # TODO: This
+        return
         
+
     def get_static_value(self, minimax_board: np.ndarray) -> float:
-        """Returns the static value of minimax_board.
+        """Returns the static value of game_board.
 
         For each possible way to get four in a row, check if the line contains only 1 or -1.
         If that row contains pieces from only one player, add the sum of their pieces to value.
-        If either player has 4 in a row, return +/- inf
+        If either player has 4 in a row, return +/- inf.
+
+        TODO: See if this is best? Maybe MCTS shold just use a 1 for win, 0 for tie, -1 for loss.
 
         Args:
-            minimax_board (np.ndarray): The current minimax board with maximing player as 1
+            game_board (np.ndarray): The current minimax board with maximing player as 1
                 and minimizing player as -1.
 
         Returns:
             value (float): The static value of the current position.
-        """
+        """    
+        windows = game_board.flatten()[helpers.WINDOW_INDICES].reshape(-1,4)
+        uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
+        if uncontested_windows.size == 0:
+            return 0
+        
+        window_sums = uncontested_windows.sum(axis=1)
 
-        value = 0
-
-        # Search windows for each possible type of four in a row in 2D
-        search_arr = minimax_board.flatten()
-        vertical_window = np.array([0,7,14,21])  # 0 is top point
-        horizontal_window = np.array([0,1,2,3])  # 0 is left most point
-        f_slash_window = np.array([0,6,12,18])  # 0 is top right point
-        b_slash_window = np.array([0,8,16,24])  # 0 is top left point
-
-        # Check for vertical wins. Top piece must be in row [0,1,2] and any col [0..6]. In the flattened
-        # array, that corresponds to indices [0:20] inclusive.
-        for start in range(21):
-            window = search_arr[vertical_window + start]
-            if not (1 in window and -1 in window):
-                win_val = window.sum()
-                if abs(win_val) == 4: 
-                    return np.inf * win_val
-                value += win_val
-
-        # Check for forward diagonal (/) wins. Top right piece must be in row [0,1,2] and col [3..6].
-        for start in [col + 7*row for col in range(3,7) for row in range(3)]:
-            window = search_arr[f_slash_window + start]
-            if not (1 in window and -1 in window):
-                win_val = window.sum()
-                if abs(win_val) == 4: 
-                    return np.inf * win_val
-                value += win_val
-
-        # Check for back diagonal (\) wins. Top left piece must be in row [0,1,2] and col [0..3].
-        for start in [col + 7*row for col in range(4) for row in range(3)]:
-            window = search_arr[b_slash_window + start]
-            if not (1 in window and -1 in window):
-                win_val = window.sum()
-                if abs(win_val) == 4: 
-                    return np.inf * win_val
-                value += win_val
-
-        # Check for horizontal wins. Left most piece must be in row [0..5] and col [0..3].
-        for start in [col + 7*row for col in range(4) for row in range(6)]:
-            window = search_arr[horizontal_window + start]
-            if not (1 in window and -1 in window):
-                win_val = window.sum()
-                if abs(win_val) == 4: 
-                    return np.inf * win_val
-                value += win_val
-
-        return value
+        if window_sums.max() == 4:
+            return np.inf
+        elif window_sums.min() == -4:
+            return -np.inf
+        else:
+            return (abs(window_sums) * window_sums**2 / window_sums).sum()
 
 
     def handle_invalid_move(self) -> None:

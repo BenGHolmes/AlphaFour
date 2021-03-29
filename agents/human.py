@@ -12,7 +12,7 @@ class Human(Agent):
         self._name = name
 
 
-    def get_move(self, game_board: np.ndarray, agent_marker: int) -> np.ndarray:
+    def get_move(self, game_board: np.ndarray) -> np.ndarray:
         """Prompts the user for their next move.
 
         Prompts the user for what column to add the piece to, calculates the 
@@ -20,19 +20,13 @@ class Human(Agent):
         If the move is illegal, handle_invalid_move is called.
 
         Args:
-            game_state (np.ndarray): Current game state. A stack of 10 6x7 arrays 
-                representing the last 5 moves for each player. layer 0-4 are player
-                one's moves, and 5-9 are player two's moves. A 1 indicates where the
-                new piece was played, and all other entries are 0
             game_board (np.ndarray): A human readable version of the board, with all
                 currently played pieces represented as a 1 or 2 for players one and 
-                two respectively. All open spaces are 0
-            agent_marker (int): Integer indicating which value in game_board corresponds
-                to this Agent's pieces
+                two respectively. All open spaces are 0.
 
         Returns:
             An ndarray representing the move, with a 1 in the row,col of the new
-            piece, and all other entries zero
+            piece, and all other entries zero.
         """
         col_idx = None
         while col_idx is None:
@@ -50,15 +44,15 @@ class Human(Agent):
 
 
     def get_new_state(self, col_idx: int, board: np.ndarray) -> np.ndarray:
-        """Calculate the row the piece lands in and return the new game_state
+        """Calculate the row the piece lands in and return the new game_state.
 
         Args:
             col_idx (int): The column the player chose for their move
-            board (np.ndarray): The current board_state
+                board (np.ndarray): The current board_state.
 
         Returns:
             An ndarray representing the move, with a 1 in the row,col of the new
-            piece, and all other entries zero
+            piece, and all other entries zero.
         """
 
         col = board[:,col_idx]
