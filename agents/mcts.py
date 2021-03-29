@@ -3,6 +3,7 @@ from agents import Agent
 import time
 import math
 import helpers
+from random import choice
 
 class Node(object):
     def __init__(self, game_board: np.ndarray):
@@ -18,87 +19,98 @@ class Node(object):
 class MCTS(Agent):
     """Agent that implements Monte Carlo Tree Search to select next move."""
 
-    NUM_SIMULATIONS = 1000
+    NUM_SIMULATIONS = 2000
     EXPLORATION_PARAMETER = np.sqrt(2)
 
-    def __init__(self, name: str = None) -> None:
+    def __init__(self, name=None):
         self._name = name
 
 
-    def get_move(self, game_board: np.ndarray) -> np.ndarray:
+    def select(self, node):
+        path = [node]  # For storing nodes we traverse along the way
+
+        # Loop until we hit a leaf node
+        while node.children is not None:
+            children = node.children
+            max_score = -np.inf
+            new_move = []
+            for child in children:
+                uct_score = self.get_uct_score(child.value, child.visits, node.visits)
+                if uct_score > max_score:
+                    max_score = uct_score
+                    new_move = [child]
+                elif uct_score == max_score:
+                    # Add to list so we can randomly sample from tied states
+                    new_move.append(child)
+
+            # Update node and add to path
+            node = new_move[np.random.randint(0, len(new_move))]
+            path.append(node)
+
+        return node, path
+
+
+    def expand(self, node):
+        # Create children. Flip state after move since convention is for current player to be 1
+        # and opponent to be -1. 
+        node.add_children(-node.state + helpers.get_legal_moves(node.state))
+        return choice(node.children)
+
+
+    def simulate(self, node):
+        board = node.state
+        turn = 0
+        while self.get_static_value(board) is None:
+            moves = helpers.get_legal_moves(board)
+            board = -board + choice(moves)
+            turn += 1
+
+        return self.get_static_value(board) * (-1)**turn
+
+
+    def back_propagate(self, path, reward):
+        # Work backwards through path and propagate reward
+        for i,node in enumerate(path[::-1]):
+            node.visits += 1
+            node.value += reward * (-1)**(i)
+
+
+    def get_move(self, game_board):
         # Initialize root to the current state and populate children. 
         root = Node(game_board)
-        root.add_children(root.state + helpers.get_legal_moves(root.state))
 
         for i in range(self.NUM_SIMULATIONS):
-            path = [root]  # For storing nodes we traverse along the way
-            node = root
-            while node.children is not None:
-                # Select child that maximizes UCT score
-                children = node.children
-                max_score = -np.inf
-                new_move = []
-                for child in children:
-                    uct_score = self.get_uct_score(child.value, child.visits, node.visits)
-                    if uct_score > max_score:
-                        max_score = uct_score
-                        new_move = [child]
-                    elif uct_score == max_score:
-                        # Add to list so we can randomly sample from tied states
-                        new_move.append(child)
+            leaf, path = self.select(root)
+            if self.get_static_value(leaf.state) is not None:
+                # If leaf has static value it has no children. Back prop
+                self.back_propagate(path, self.get_static_value(leaf.state))
+            else:
+                # Leaf has children. Expand and simulate
+                new_leaf = self.expand(leaf)
+                path.append(new_leaf)
 
-                # Update node and add to path
-                node = new_move[np.random.randint(0, len(new_move))]
-                path.append(node)
+                value = self.simulate(new_leaf)
 
-            value = self.get_static_value(node.state)
-            
-            if value is not None:
-                # If value is not None, this is an end-game state. Update visits, values, etc.
-                for i,node in enumerate(path):
-                    node.value += ((-1)**i) * value
-                    node.visits += 1
-            else: 
-                # If value is None, expand, choose random move, simulate to end
-                # Flip sign since player changes each move
-                node.add_children(-node.state + helpers.get_legal_moves(node.state))
-
-                first_child = node.children[np.random.randint(0, len(node.children))]
-                sim_board = first_child.state
-                move_idx = 0
-                while self.get_static_value(sim_board) is None:
-                    moves = helpers.get_legal_moves(sim_board)
-                    sim_board = -sim_board + moves[np.random.randint(0, len(moves))]
-                    move_idx += 1
-
-                # Value relative to current player. If move_idx is odd, this is negative
-                # of the value of the original simulation node.
-                value = self.get_static_value(sim_board)*(-1)**move_idx
-                
-                path.append(first_child)
-                for i,node in enumerate(path):
-                    node.value += ((-1)**i) * value
-                    node.visits += 1
+                self.back_propagate(path, value)
 
         # Choose most visited move
         max_visits = 0
         max_value = None
         move = None
-        for node in root.children:
-            print(f"Visits: {node.visits} | Value: {node.value/node.visits}")
-            print(node.state, '\n')
 
+        for node in root.children:
             if node.visits > max_visits:
-                move = node.state - game_board
+                move = abs(node.state + game_board)
                 max_visits = node.visits
                 max_value = node.value
 
-        # print(f"Found best move with {max_visits} visits and a value of {max_value}")
+        print(f"Found best move with {max_visits} visits and a value of {max_value}")
+        print(move)
 
         return move
 
 
-    def get_uct_score(self, w: float, n: int, N: int):
+    def get_uct_score(self, w, n, N):
         """Returns the UCT score of a node with a score of w, n visits and N parent visits.
         
         See: https://en.wikipedia.org/wiki/Monte_Carlo_tree_search#Exploration_and_exploitation
@@ -119,7 +131,7 @@ class MCTS(Agent):
 
         
 
-    def get_static_value(self, game_board: np.ndarray) -> float:
+    def get_static_value(self, game_board):
         """Returns the static value of game_board.
 
         For each possible way to get four in a row, check if the line contains only 1 or -1.
@@ -135,6 +147,9 @@ class MCTS(Agent):
         Returns:
             value (float): The static value of the current position.
         """    
+        if (game_board==0).all():
+            return None
+
         windows = game_board.flatten()[helpers.WINDOW_INDICES].reshape(-1,4)
         uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
         if uncontested_windows.size == 0:
@@ -152,7 +167,7 @@ class MCTS(Agent):
         return None
 
 
-    def handle_invalid_move(self) -> None:
+    def handle_invalid_move(self):
         # Throw exception during development
         # TODO: Add some nice handler later on
         raise Exception
