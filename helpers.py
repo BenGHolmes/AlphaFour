@@ -53,3 +53,33 @@ def get_legal_moves(game_board: np.ndarray) -> np.ndarray:
 
     return legal_moves
     
+def winner(game_board):
+    """Returns the winner/value of the game board.
+
+    For each possible way to get four in a row, check if the line sums to 4 or -4
+    and return the winner as 1 or -1. If no spaces remain, return 0 for a tie. If no
+    one has won and moves can still be made, return None
+
+    Args:
+        game_board (np.ndarray): The current minimax board with maximing player as 1
+            and minimizing player as -1.
+
+    Returns:
+        1 if current player has won, -1 if opponent has won, 0 for a tie, None for
+        a state that doesn't end the game.
+    """    
+    windows = game_board.flatten()[WINDOW_INDICES].reshape(-1,4)
+    uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
+    
+    # If there are any windows with only 1's or -1's, check if any are full
+    if uncontested_windows.size > 0:
+        window_sums = uncontested_windows.sum(axis=1)
+        if window_sums.max() == 4:
+            return 1
+        elif window_sums.min() == -4:
+            return -1
+    # If no zeros on board, game ended in tie
+    elif not (game_board == 0).any():
+        return 0 
+    
+    return None

@@ -18,9 +18,8 @@ class AlphaBeta(Agent):
         This player is assumed to be maximizing.
 
         Args:
-            game_board (np.ndarray): A human readable version of the board, with all
-                currently played pieces represented as a 1 or 2 for players one and 
-                two respectively. All open spaces are 0.
+            game_board (np.ndarray): current board with a 1 for current player, -1 for
+                opponent, and 0 for open space
 
         Returns:
             An ndarray representing the move, with a 1 in the row,col of the new
