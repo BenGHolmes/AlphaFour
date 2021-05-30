@@ -3,14 +3,15 @@ from connectboard import ConnectBoard
 import argparse
 
 agents = {
-    'Human': Human,
-    'AlphaBeta': AlphaBeta,
-    'Mcts': Mcts,
-    'AlphaFour': AlphaFour
+    "Human": Human,
+    "AlphaBeta": AlphaBeta,
+    "Mcts": Mcts,
+    "AlphaFour": AlphaFour
 }
 
 
 def play(p1: Agent, p2: Agent) -> None:
+    """Plays a game of ConnectFour between two agents."""
     board = ConnectBoard()
     turn = 0
 
@@ -37,7 +38,7 @@ def play(p1: Agent, p2: Agent) -> None:
                 p2.handle_invalid_move()
 
     print(board)
-    
+
     winner = board.winner()
     if winner:
         print("P{} wins!".format(winner))
@@ -45,11 +46,11 @@ def play(p1: Agent, p2: Agent) -> None:
         print("Tie!")
 
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run a game of Connect Four between two agents.')
-    parser.add_argument('-p1','--player1', default='Human')
-    parser.add_argument('-p2','--player2', default='AlphaBeta')
+    parser = argparse.ArgumentParser(
+        description="Run a game of Connect Four between two agents.")
+    parser.add_argument("-p1", "--player1", default="Human")
+    parser.add_argument("-p2", "--player2", default="AlphaBeta")
 
     args = parser.parse_args()
 
@@ -69,5 +70,3 @@ if __name__ == "__main__":
     p2 = agents[p2_type]()
 
     play(p1, p2)
-
-    

@@ -1,18 +1,21 @@
 import numpy as np
 from agents import Agent, Human
 
+
 class InvalidMoveException(Exception):
     pass
 
-class ConnectBoard(object):
-    """An instance of a Connect Four game board. 
 
-    Responsible for handling all logic associated with the board, such as listing 
+class ConnectBoard(object):
+    """An instance of a Connect Four game board.
+
+    Responsible for handling all logic associated with the board, such as listing
     legal moves, determining the winner, and handling player moves.
     """
 
     # Array of indices of all possible 4-in-a-row combinations. This is kinda ugly,
     # but it's much much faster than building them on the fly, so it's worth it.
+    # yapf: disable
     WINDOW_INDICES = np.array([
         # Horizontal groups of 4
         0,1,2,3,       1,2,3,4,       2,3,4,5,       3,4,5,6,     # Row 1
@@ -21,17 +24,17 @@ class ConnectBoard(object):
         21,22,23,24,   22,23,24,25,   23,24,25,26,   24,25,26,27, # Row 4
         28,29,30,31,   29,30,31,32,   30,31,32,33,   31,32,33,34, # Row 5
         35,36,37,38,   36,37,38,39,   37,38,39,40,   38,39,40,41, # Row 6
-        
+
         # Vertical groups of 4
         0,7,14,21,     1,8,15,22,     2,9,16,23,     3,10,17,24,    4,11,18,25,    5,12,19,26,    6,13,20,27,  # Row 1-4
         7,14,21,28,    8,15,22,29,    9,16,23,30,    10,17,24,31,   11,18,25,32,   12,19,26,33,   13,20,27,34, # Row 2-5
         14,21,28,35,   15,22,29,36,   16,23,30,37,   17,24,31,38,   18,25,32,39,   19,26,33,40,   20,27,34,41, # Row 3-6
-        
+
         # Diagonal up right
         21,15,9,3,     22,16,10,4,    23,17,11,5,    24,18,12,6,  # Row 1-4
         28,22,16,10,   29,23,17,11,   30,24,18,12,   31,25,19,13, # Row 2-5
         35,29,23,17,   36,30,24,18,   37,31,25,19,   38,32,26,20, # Row 3-6
-        
+
         # Diagonal down right
         0,8,16,24,     1,9,17,25,     2,10,18,26,    3,11,19,27,  # Row 1-4
         7,15,23,31,    8,16,24,32,    9,17,25,33,    10,18,26,34, # Row 2-5
@@ -43,10 +46,9 @@ class ConnectBoard(object):
         """Initializes a game instance."""
 
         # Store game state. Board stores 1 for player1 and -1 for player 2
-        self._game_board = np.zeros((6,7))  
+        self._game_board = np.zeros((6,7))
 
 
-    
     def current_state(self) -> np.ndarray:
         """Returns the current game board."""
         return self._game_board
@@ -56,7 +58,7 @@ class ConnectBoard(object):
         """Adds the given move to the current game board."""
         if not self._validate_move(abs(move)):
             raise InvalidMoveException
-        
+
         self._game_board += move
 
 
@@ -70,10 +72,10 @@ class ConnectBoard(object):
         Returns:
             1 if player1 has won, 2 if player2 has won, 0 for a tie, and None for
             a state that doesn't end the game.
-        """    
+        """
         windows = self._game_board.flatten()[self.WINDOW_INDICES].reshape(-1,4)
         uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
-        
+
         # If there are any windows with only 1's or -1's, check if any are full
         if uncontested_windows.size > 0:
             window_sums = uncontested_windows.sum(axis=1)
@@ -83,8 +85,8 @@ class ConnectBoard(object):
                 return 2
         # If no zeros on board, game ended in tie
         elif not (self._game_board == 0).any():
-            return 0 
-        
+            return 0
+
         return None
 
 
@@ -108,11 +110,11 @@ class ConnectBoard(object):
         row = int(mov_idx / 7)
         col = int(mov_idx % 7) if row else mov_idx
 
-        # Move is valid if that square is open, and either row==5 (bottom) or 
+        # Move is valid if that square is open, and either row==5 (bottom) or
         # the square below is occupied
         is_empty = self._game_board[row, col] == 0
         valid_height = ((row == 5) or self._game_board[row+1, col] != 0)
-        
+
         return (is_empty and valid_height)
 
 
@@ -128,7 +130,7 @@ class ConnectBoard(object):
             board_string += ('|' + '|'.join(row_str) + '|\n')
 
         board_string += ('|0|1|2|3|4|5|6|\n')
-    
+
         board_string += ('\nP1: X, P2: O\n')
 
         return board_string

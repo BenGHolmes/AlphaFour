@@ -4,11 +4,11 @@ from connectboard import ConnectBoard
 import time
 import math
 
+
 class AlphaBeta(Agent):
     """Agent that implements minimax with alpha-beta pruning to select its next move."""
-
     def get_move(self, game_board: np.ndarray) -> np.ndarray:
-        """Recursively runs minimax to determine the best move to make. 
+        """Recursively runs minimax to determine the best move to make.
 
         Recursively runs minimax algorithm with alpha-beta pruning starting at the current game state.
         This player is assumed to be maximizing.
@@ -26,12 +26,18 @@ class AlphaBeta(Agent):
         move_val, move = self.alpha_beta(game_board, depth=5)
         end = time.time()
 
-        print("Found optimal move with value: {}, in {}s".format(move_val, (end - start)))
+        print("Found optimal move with value: {}, in {}s".format(
+            move_val, (end - start)))
         return move
 
-
-    def alpha_beta(self, game_board: np.ndarray, alpha: float = -np.inf, beta: float = np.inf, 
-        depth: int=np.inf, max_player: bool = True) -> (int, np.ndarray):
+    def alpha_beta(
+        self,
+        game_board: np.ndarray,
+        alpha: float = -np.inf,
+        beta: float = np.inf,
+        depth: int = np.inf,
+        max_player: bool = True,
+    ) -> (int, np.ndarray):
         """Perform minimax with alpha-beta pruning to determine best move to take from current game_board.
 
         Performs minimax starting at the current position and ending after looking depth moves ahead, or when all leaf
@@ -61,7 +67,8 @@ class AlphaBeta(Agent):
             # Leaf node, perform static value checking.
             return self.get_static_value(game_board), None
 
-        next_states = game_board + legal_moves if max_player else game_board - legal_moves
+        next_states = (game_board + legal_moves if max_player else game_board -
+                       legal_moves)
         best_move = legal_moves[0]
 
         while next_states.size > 0:
@@ -73,7 +80,13 @@ class AlphaBeta(Agent):
             if math.isinf(self.get_static_value(state)):
                 val = self.get_static_value(state)
             else:
-                val, _ = self.alpha_beta(state, alpha=alpha, beta=beta, depth=depth-1,max_player=not max_player)
+                val, _ = self.alpha_beta(
+                    state,
+                    alpha=alpha,
+                    beta=beta,
+                    depth=depth - 1,
+                    max_player=not max_player,
+                )
 
             if max_player and val > alpha:
                 alpha = val
@@ -92,7 +105,6 @@ class AlphaBeta(Agent):
         else:
             return beta, best_move
 
-
     def get_most_valuable(self, states: np.ndarray, max_player: bool) -> int:
         """Return the index of next_states corresponding to the best static value for current player.
 
@@ -106,7 +118,7 @@ class AlphaBeta(Agent):
         idx = 0
         best_val = self.get_static_value(states[0])
 
-        for i in range(1,states.shape[0]):
+        for i in range(1, states.shape[0]):
             val = self.get_static_value(states[i])
 
             if max_player and val > best_val:
@@ -118,7 +130,6 @@ class AlphaBeta(Agent):
 
         return idx
 
-        
     def get_static_value(self, game_board: np.ndarray) -> float:
         """Returns the static value of game_board.
 
@@ -132,12 +143,14 @@ class AlphaBeta(Agent):
 
         Returns:
             value (float): The static value of the current position.
-        """    
-        windows = game_board.flatten()[ConnectBoard.WINDOW_INDICES].reshape(-1,4)
-        uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
+        """
+        windows = game_board.flatten()[ConnectBoard.WINDOW_INDICES].reshape(
+            -1, 4)
+        uncontested_windows = windows[windows.min(
+            axis=1) != -windows.max(axis=1)]
         if uncontested_windows.size == 0:
             return 0
-        
+
         window_sums = uncontested_windows.sum(axis=1)
 
         if window_sums.max() == 4:
@@ -147,9 +160,7 @@ class AlphaBeta(Agent):
         else:
             return (abs(window_sums) * window_sums**2 / window_sums).sum()
 
-
     def handle_invalid_move(self) -> None:
         # Throw exception during development
         # TODO: Add some nice handler later on
         raise Exception
-        
