@@ -13,13 +13,12 @@ class Model(object):
     TODO: All the challenging stuff
     """
     def value(self, state):
-        # FIXME: 
+        # FIXME: Implement the NN
         return 2*np.random.rand()-1
     def policy(self, state):
-        # FIXME:
+        # FIXME: Implement the NN
         return np.full(7, 1/7)
     
-
 
 class Node(object):
     """Node object used in MCTS.
@@ -54,6 +53,7 @@ class AlphaFour(Agent):
     
     TODO: 
         - Store subtree so I don't have to rebuild every time
+        - General performance boosts. Pretty slow going right now
     """
 
     def __init__(self, name: str = None) -> None:
