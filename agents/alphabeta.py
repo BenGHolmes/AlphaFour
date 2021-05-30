@@ -1,15 +1,11 @@
 import numpy as np
 from agents import Agent
+from connectboard import ConnectBoard
 import time
 import math
-import helpers
 
 class AlphaBeta(Agent):
     """Agent that implements minimax with alpha-beta pruning to select its next move."""
-
-    def __init__(self, name: str = None) -> None:
-        self._name = name
-
 
     def get_move(self, game_board: np.ndarray) -> np.ndarray:
         """Recursively runs minimax to determine the best move to make. 
@@ -59,7 +55,7 @@ class AlphaBeta(Agent):
             move (np.ndarray): A 6x7 numpy array with a 1 in the spot of the move to take from the current
                 node that will result in the optimal value.
         """
-        legal_moves = helpers.get_legal_moves(game_board)
+        legal_moves = ConnectBoard.get_legal_moves(game_board)
 
         if legal_moves.size == 0 or depth == 0:
             # Leaf node, perform static value checking.
@@ -137,7 +133,7 @@ class AlphaBeta(Agent):
         Returns:
             value (float): The static value of the current position.
         """    
-        windows = game_board.flatten()[helpers.WINDOW_INDICES].reshape(-1,4)
+        windows = game_board.flatten()[ConnectBoard.WINDOW_INDICES].reshape(-1,4)
         uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
         if uncontested_windows.size == 0:
             return 0

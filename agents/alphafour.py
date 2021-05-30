@@ -2,7 +2,6 @@ import numpy as np
 from agents import Agent
 import time
 import math
-import helpers
 from random import choice
 from time import time
 
@@ -56,8 +55,7 @@ class AlphaFour(Agent):
         - General performance boosts. Pretty slow going right now
     """
 
-    def __init__(self, name: str = None) -> None:
-        self._name = name
+    def __init__(self) -> None:
         self._EXPLORATION_CONSTANT = 1
         self._NUM_MCTS = 100
         self.model = Model()
@@ -85,7 +83,7 @@ class AlphaFour(Agent):
     def expand_and_sim(self, node):
         # Combined expand and simulate. We add children to this node, and assign 
         # the value of the node and prior probabilities of possible actions
-        node.add_children(helpers.get_legal_moves(node.state[0] + node.state[1]))
+        node.add_children(ConnectBoard.get_legal_moves(node.state[0] + node.state[1]))
         node.P = self.model.policy(node.state)  # Add prior probabilities
         node.V = self.model.value(node.state) # Add predicted value of state
         return node.V
@@ -136,7 +134,7 @@ class AlphaFour(Agent):
         for i in range(self._NUM_MCTS):
             leaf, path = self.select(root)
         
-            winner = helpers.winner(leaf.state[0] - leaf.state[1])
+            winner = ConnectBoard.winner(leaf.state[0] - leaf.state[1])
             if winner is not None:
                 # If leaf has static value it has no children. Back prop
                 self.back_propagate(path, winner)
@@ -149,7 +147,7 @@ class AlphaFour(Agent):
         visits = root.N
 
         # Mask out invalid moves
-        col_has_move = helpers.get_legal_moves(root.state[0]+root.state[1]).sum(axis=0).sum(axis=0).astype(bool)
+        col_has_move = ConnectBoard.get_legal_moves(root.state[0]+root.state[1]).sum(axis=0).sum(axis=0).astype(bool)
         visits[~col_has_move] = 0
 
         action = visits.argmax()

@@ -1,8 +1,8 @@
 import numpy as np
 from agents import Agent
+from connectboard import ConnectBoard
 import time
 import math
-import helpers
 from random import choice
 
 class Node(object):
@@ -16,14 +16,11 @@ class Node(object):
         self.children = [Node(gb) for gb in children]
 
 
-class MCTS(Agent):
+class Mcts(Agent):
     """Agent that implements Monte Carlo Tree Search to select next move."""
 
     NUM_SIMULATIONS = 2000
     EXPLORATION_PARAMETER = np.sqrt(2)
-
-    def __init__(self, name=None):
-        self._name = name
 
 
     def select(self, node):
@@ -53,7 +50,7 @@ class MCTS(Agent):
     def expand(self, node):
         # Create children. Flip state after move since convention is for current player to be 1
         # and opponent to be -1. 
-        node.add_children(-node.state + helpers.get_legal_moves(node.state))
+        node.add_children(-node.state + ConnectBoard.get_legal_moves(node.state))
         return choice(node.children)
 
 
@@ -61,7 +58,7 @@ class MCTS(Agent):
         board = node.state
         turn = 0
         while self.get_static_value(board) is None:
-            moves = helpers.get_legal_moves(board)
+            moves = ConnectBoard.get_legal_moves(board)
             board = -board + choice(moves)
             turn += 1
 
@@ -150,7 +147,7 @@ class MCTS(Agent):
         if (game_board==0).all():
             return None
 
-        windows = game_board.flatten()[helpers.WINDOW_INDICES].reshape(-1,4)
+        windows = game_board.flatten()[ConnectBoard.WINDOW_INDICES].reshape(-1,4)
         uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
         if uncontested_windows.size == 0:
             return 0
@@ -161,7 +158,7 @@ class MCTS(Agent):
             return 1
         elif window_sums.min() == -4:
             return -1
-        elif helpers.get_legal_moves(game_board).size == 0:
+        elif ConnectBoard.get_legal_moves(game_board).size == 0:
             return 0
         
         return None

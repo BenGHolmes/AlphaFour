@@ -8,10 +8,6 @@ class Human(Agent):
     enter their next move using the keyboard.
     """
 
-    def __init__(self, name: str = None) -> None:
-        self._name = name
-
-
     def get_move(self, game_board: np.ndarray) -> np.ndarray:
         """Prompts the user for their next move.
 
@@ -31,7 +27,7 @@ class Human(Agent):
         col_idx = None
         while col_idx is None:
             try:
-                move_string = input("{}'s move:".format(self._name))
+                move_string = input("Enter move:".format())
                 col_idx = int(move_string)
             except KeyboardInterrupt:
                 exit()
