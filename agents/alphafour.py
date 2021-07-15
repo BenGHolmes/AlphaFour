@@ -4,6 +4,7 @@ import time
 import math
 from random import choice
 from time import time
+from connectboard import ConnectBoard
 
 
 class Model(object):
@@ -11,6 +12,7 @@ class Model(object):
 
     TODO: All the challenging stuff
     """
+
     def value(self, state):
         # FIXME: Implement the NN
         return 2 * np.random.rand() - 1
@@ -22,15 +24,16 @@ class Model(object):
 
 class Node(object):
     """Node object used in MCTS."""
+
     def __init__(self, state):
         self.state = state  # Current state
-        self.P = np.zeros(
-            7)  # Probability of taking each action from this state
+        self.P = np.zeros(7)  # Probability of taking each action from this state
         self.W = np.zeros(7)  # Total value of next state from N visits
         self.N = np.zeros(7)  # Number of times each action was taken
         self.children = None  # Children of this Node
 
     def add_children(self, moves):
+        """Add a child for each of the given moves."""
         self.children = [None for _ in range(7)]
 
         # Boolean for which columns have a legal move
@@ -39,17 +42,22 @@ class Node(object):
         move_idx = 0
         for i in range(7):
             if col_has_move[i]:
-                if self.state[2].all():
-                    # If player 1's turn, add move to state[0], and subtract 1 from state[2]
-                    self.children[i] = Node(self.state + np.array(
-                        [moves[move_idx],
-                         np.zeros((6, 7)), -np.ones((6, 7))]))
-                else:
-                    # If player 2's turn, add move to state[1], and add 1 to state[2]
-                    self.children[i] = Node(self.state + np.array(
-                        [np.zeros((6, 7)), moves[move_idx],
-                         np.ones((6, 7))]))
+                next_state = AlphaFour.next_game_state(self.state, moves[move_idx])
+                self.children[i] = Node(next_state)
                 move_idx += 1
+
+    def ucb_score(self, exploration_constant: float) -> np.array:
+        """Return the UCB score of each edge from this node."""
+        ucb = np.where(
+            self.N > 0,
+            self.W / self.N + exploration_constant * self.P / (1 + self.N),
+            np.inf,
+        )
+
+        # Avoid invalid moves by setting UCB to -inf for None children
+        ucb = np.where(self.children is not None, ucb, -np.inf)
+
+        return ucb
 
 
 class AlphaFour(Agent):
@@ -59,26 +67,22 @@ class AlphaFour(Agent):
         - Store subtree so I don't have to rebuild every time
         - General performance boosts. Pretty slow going right now
     """
+
     def __init__(self) -> None:
         self._EXPLORATION_CONSTANT = 1
         self._NUM_MCTS = 100
         self.model = Model()
 
-    def select(self, node):
+    def select(self, node: Node) -> tuple[Node, list[(Node, int)]]:
+        """
+        """
         path = []  # For storing nodes we traverse along the way
 
         # Loop until we hit a leaf node
         while node.children is not None:
             # UCB score as defined in AlphaGo Zero paper. Use infinity for unvisited nodes
             # see: "Mastering the game of Go without human knowledge"
-            ucb = np.where(
-                node.N > 0,
-                node.W / node.N + self._EXPLORATION_CONSTANT * node.P /
-                (1 + node.N),
-                np.inf,
-            )
-            ucb[[True if c is None else False
-                 for c in node.children]] = -np.inf  # Avoid invalid moves
+            ucb = node.ucb_score(self._EXPLORATION_CONSTANT)
             next_move = np.argmax(ucb)
 
             path.append((node, next_move))
@@ -88,20 +92,19 @@ class AlphaFour(Agent):
 
         return node, path
 
-    def expand_and_sim(self, node):
+    def expand_and_sim(self, node: Node) -> float:
         # Combined expand and simulate. We add children to this node, and assign
         # the value of the node and prior probabilities of possible actions
-        node.add_children(
-            ConnectBoard.get_legal_moves(node.state[0] + node.state[1]))
+        node.add_children(ConnectBoard.get_legal_moves(node.state[0] + node.state[1]))
         node.P = self.model.policy(node.state)  # Add prior probabilities
-        node.V = self.model.value(node.state)  # Add predicted value of state
-        return node.V
+        node.W = self.model.value(node.state)  # Add predicted value of state
+        return node.W
 
-    def back_propagate(self, path, reward):
+    def back_propagate(self, path: list[(Node, int)], reward: int) -> None:
         # Work backwards through path and propagate reward
         for i, (node, action) in enumerate(path[::-1]):
             node.N[action] += 1
-            node.W[action] += reward * (-1)**(i + 1)
+            node.W[action] += reward * (-1) ** (i + 1)
 
     def get_move(self, game_board: np.ndarray) -> np.ndarray:
         """Returns the best move for AlphaFour to take from the current state.
@@ -120,7 +123,7 @@ class AlphaFour(Agent):
         """
         raise NotImplementedError
 
-    def get_move_with_prob(self, game_state):
+    def get_move_with_prob(self, game_state: np.ndarray) -> tuple[np.ndarray, np.array]:
         """Returns the best move along with the probabilities of each possible move.
 
         Runs the same MCTS as above, using the trained neural net to predict prior
@@ -140,7 +143,7 @@ class AlphaFour(Agent):
         for i in range(self._NUM_MCTS):
             leaf, path = self.select(root)
 
-            winner = ConnectBoard.winner(leaf.state[0] - leaf.state[1])
+            winner = ConnectBoard.get_winner(leaf.state[0] - leaf.state[1])
             if winner is not None:
                 # If leaf has static value it has no children. Back prop
                 self.back_propagate(path, winner)
@@ -154,8 +157,11 @@ class AlphaFour(Agent):
 
         # Mask out invalid moves
         col_has_move = (
-            ConnectBoard.get_legal_moves(root.state[0] + root.state[1]).sum(
-                axis=0).sum(axis=0).astype(bool))
+            ConnectBoard.get_legal_moves(root.state[0] + root.state[1])
+            .sum(axis=0)
+            .sum(axis=0)
+            .astype(bool)
+        )
         visits[~col_has_move] = 0
 
         action = visits.argmax()
@@ -171,26 +177,37 @@ class AlphaFour(Agent):
         raise Exception
 
     @staticmethod
-    def get_game_state(game_board):
-        """Return the NN friendly version of the gameboard.
+    def get_game_state(game_board: np.ndarray) -> np.ndarray:
+        """Returns the NN friendly version of the gameboard.
 
         Following the format of the AlphaGo Zero paper, the game state has the following format:
-            game_state[0]: 6x7 array with a 1 in all positions occupied by player 1
-            game_state[1]: 6x7 array with a 1 in all positions occupied by player 2
-            game_state[2]: 6x7 array of all 1 if player 1's turn, otherwise all 0
+            game_state[0]: 6x7 array with a 1 in all positions occupied by this agent
+            game_state[1]: 6x7 array with a 1 in all positions occupied by the opponent
 
         Args:
-            game_board (np.ndarray): Current board in standard format. With a 1 for current player,
-                -1 for the opponent and a 0 for open spaces.
+            game_board: Numpy array of the current board in standard format. With a 1 for this 
+            player, -1 for the opponent and a 0 for open spaces.
 
         Returns:
-            NN friendly version of the game board as defined above.
+            Numpy array of the NN friendly game state as defined above.
         """
-        # We can always fill layer 3 with all ones initially, since we are only asked to make a move on
-        # our turn. With the convention defined connectgame.py, we'll only get the board when our pieces
-        # are 1's and it's our turn to play.
-        return np.array([
-            np.where(game_board == 1, 1, 0),
-            np.where(game_board == -1, 1, 0),
-            np.ones((6, 7)),
-        ])
+        return np.array(
+            [np.where(game_board == 1, 1, 0), np.where(game_board == -1, 1, 0)]
+        )
+
+    @staticmethod
+    def next_game_state(game_state: np.ndarray, move: np.ndarray) -> np.ndarray:
+        """Returns the new game state after the given move is made by the current player.
+        
+        Args:
+            game_state: Numpy array of the current game state.
+            move: Numpy array of the move to be made by the current player. 
+        
+        Returns:
+            Numpy array of the new game state after the move is made and the current
+            player is changed.
+        """
+        curr_player_pieces = game_state[0] + move
+        opponent_pieces = game_state[1]
+
+        return np.array([opponent_pieces, curr_player_pieces])

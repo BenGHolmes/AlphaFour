@@ -2,12 +2,7 @@ from agents import Agent, Human, AlphaBeta, Mcts, AlphaFour
 from connectboard import ConnectBoard
 import argparse
 
-agents = {
-    "Human": Human,
-    "AlphaBeta": AlphaBeta,
-    "Mcts": Mcts,
-    "AlphaFour": AlphaFour
-}
+agents = {"Human": Human, "AlphaBeta": AlphaBeta, "Mcts": Mcts, "AlphaFour": AlphaFour}
 
 
 def play(p1: Agent, p2: Agent) -> None:
@@ -48,7 +43,8 @@ def play(p1: Agent, p2: Agent) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run a game of Connect Four between two agents.")
+        description="Run a game of Connect Four between two agents."
+    )
     parser.add_argument("-p1", "--player1", default="Human")
     parser.add_argument("-p2", "--player2", default="AlphaBeta")
 

@@ -7,6 +7,7 @@ import math
 
 class AlphaBeta(Agent):
     """Agent that implements minimax with alpha-beta pruning to select its next move."""
+
     def get_move(self, game_board: np.ndarray) -> np.ndarray:
         """Recursively runs minimax to determine the best move to make.
 
@@ -26,8 +27,9 @@ class AlphaBeta(Agent):
         move_val, move = self.alpha_beta(game_board, depth=5)
         end = time.time()
 
-        print("Found optimal move with value: {}, in {}s".format(
-            move_val, (end - start)))
+        print(
+            "Found optimal move with value: {}, in {}s".format(move_val, (end - start))
+        )
         return move
 
     def alpha_beta(
@@ -43,7 +45,7 @@ class AlphaBeta(Agent):
         Performs minimax starting at the current position and ending after looking depth moves ahead, or when all leaf
         nodes are end_game states.
 
-        TODO: If multiple winning moves, it picks the first one. Change so agent chooses the quickest win
+        TODO: If multiple winning moves, it picks the first one. Change so agent chooses the quickest win.
 
         Args:
             game_board (np.ndarray): 2D array representing the current pieces as 1 or -1 if they
@@ -67,8 +69,9 @@ class AlphaBeta(Agent):
             # Leaf node, perform static value checking.
             return self.get_static_value(game_board), None
 
-        next_states = (game_board + legal_moves if max_player else game_board -
-                       legal_moves)
+        next_states = (
+            game_board + legal_moves if max_player else game_board - legal_moves
+        )
         best_move = legal_moves[0]
 
         while next_states.size > 0:
@@ -144,10 +147,8 @@ class AlphaBeta(Agent):
         Returns:
             value (float): The static value of the current position.
         """
-        windows = game_board.flatten()[ConnectBoard.WINDOW_INDICES].reshape(
-            -1, 4)
-        uncontested_windows = windows[windows.min(
-            axis=1) != -windows.max(axis=1)]
+        windows = game_board.flatten()[ConnectBoard.WINDOW_INDICES].reshape(-1, 4)
+        uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
         if uncontested_windows.size == 0:
             return 0
 
@@ -158,7 +159,7 @@ class AlphaBeta(Agent):
         elif window_sums.min() == -4:
             return -np.inf
         else:
-            return (abs(window_sums) * window_sums**2 / window_sums).sum()
+            return (abs(window_sums) * window_sums ** 2 / window_sums).sum()
 
     def handle_invalid_move(self) -> None:
         # Throw exception during development

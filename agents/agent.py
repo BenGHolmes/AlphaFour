@@ -2,7 +2,8 @@ import numpy as np
 
 
 class Agent(object):
-    """Generic Agent class. To be used as a parent class for different implementations"""
+    """Generic Agent class. To be used as a parent class for different implementations."""
+
     def __init__(self) -> None:
         pass
 

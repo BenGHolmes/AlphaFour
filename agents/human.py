@@ -8,6 +8,7 @@ class Human(Agent):
     Each turn the game board is printed, and the user is prompted to
     enter their next move using the keyboard.
     """
+
     def get_move(self, game_board: np.ndarray) -> np.ndarray:
         """Prompts the user for their next move.
 

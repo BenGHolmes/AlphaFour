@@ -1,8 +1,11 @@
+from os import stat
 import numpy as np
 from agents import Agent, Human
 
 
 class InvalidMoveException(Exception):
+    """Exception thrown if player makes an invalid move."""
+
     pass
 
 
@@ -15,7 +18,7 @@ class ConnectBoard(object):
 
     # Array of indices of all possible 4-in-a-row combinations. This is kinda ugly,
     # but it's much much faster than building them on the fly, so it's worth it.
-    # yapf: disable
+    # fmt: off
     WINDOW_INDICES = np.array([
         # Horizontal groups of 4
         0,1,2,3,       1,2,3,4,       2,3,4,5,       3,4,5,6,     # Row 1
@@ -73,21 +76,7 @@ class ConnectBoard(object):
             1 if player1 has won, 2 if player2 has won, 0 for a tie, and None for
             a state that doesn't end the game.
         """
-        windows = self._game_board.flatten()[self.WINDOW_INDICES].reshape(-1,4)
-        uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
-
-        # If there are any windows with only 1's or -1's, check if any are full
-        if uncontested_windows.size > 0:
-            window_sums = uncontested_windows.sum(axis=1)
-            if window_sums.max() == 4:
-                return 1
-            elif window_sums.min() == -4:
-                return 2
-        # If no zeros on board, game ended in tie
-        elif not (self._game_board == 0).any():
-            return 0
-
-        return None
+        return ConnectBoard.get_winner(self.current_state())
 
 
     def _validate_move(self, move: np.ndarray) -> bool:
@@ -123,15 +112,14 @@ class ConnectBoard(object):
 
         Prints the current game board with player one as X and player two as O.
         """
-        board_string = ("\n\n===============\n\n")
+        board_string = "\n\n===============\n\n"
 
         for row in self._game_board:
             row_str = ['X' if x == 1 else 'O' if x == -1 else '_' for x in row]
-            board_string += ('|' + '|'.join(row_str) + '|\n')
+            board_string += '|{}|{}|{}|{}|{}|{}|{}|\n'.format(*row_str)
 
-        board_string += ('|0|1|2|3|4|5|6|\n')
-
-        board_string += ('\nP1: X, P2: O\n')
+        board_string += '|0|1|2|3|4|5|6|\n\n'
+        board_string += 'P1: X, P2: O\n'
 
         return board_string
 
@@ -161,3 +149,23 @@ class ConnectBoard(object):
         legal_moves = legal_moves.reshape((-1,6,7))
 
         return legal_moves
+        
+    @staticmethod
+    def get_winner(game_board: np.ndarray) -> int:
+        flat_board = game_board.flatten()
+
+        window_values = flat_board[ConnectBoard.WINDOW_INDICES].reshape(-1,4)
+        uncontested_windows = window_values[window_values.min(axis=1) != -window_values.max(axis=1)]
+
+        # If there are any windows with only 1's or -1's, check if any are full
+        if uncontested_windows.size > 0:
+            window_sums = uncontested_windows.sum(axis=1)
+            if window_sums.max() == 4:
+                return 1
+            elif window_sums.min() == -4:
+                return 2
+        # If no zeros on board, game ended in tie
+        elif not (game_board == 0).any():
+            return 0
+
+        return None

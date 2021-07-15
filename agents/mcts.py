@@ -32,8 +32,7 @@ class Mcts(Agent):
             max_score = -np.inf
             new_move = []
             for child in children:
-                uct_score = self.get_uct_score(child.value, child.visits,
-                                               node.visits)
+                uct_score = self.get_uct_score(child.value, child.visits, node.visits)
                 if uct_score > max_score:
                     max_score = uct_score
                     new_move = [child]
@@ -50,8 +49,7 @@ class Mcts(Agent):
     def expand(self, node):
         # Create children. Flip state after move since convention is for current player to be 1
         # and opponent to be -1.
-        node.add_children(-node.state +
-                          ConnectBoard.get_legal_moves(node.state))
+        node.add_children(-node.state + ConnectBoard.get_legal_moves(node.state))
         return choice(node.children)
 
     def simulate(self, node):
@@ -62,13 +60,13 @@ class Mcts(Agent):
             board = -board + choice(moves)
             turn += 1
 
-        return self.get_static_value(board) * (-1)**turn
+        return self.get_static_value(board) * (-1) ** turn
 
     def back_propagate(self, path, reward):
         # Work backwards through path and propagate reward
         for i, node in enumerate(path[::-1]):
             node.visits += 1
-            node.value += reward * (-1)**(i)
+            node.value += reward * (-1) ** (i)
 
     def get_move(self, game_board):
         # Initialize root to the current state and populate children.
@@ -99,9 +97,7 @@ class Mcts(Agent):
                 max_visits = node.visits
                 max_value = node.value
 
-        print(
-            f"Found best move with {max_visits} visits and a value of {max_value}"
-        )
+        print(f"Found best move with {max_visits} visits and a value of {max_value}")
         print(move)
 
         return move
@@ -123,8 +119,7 @@ class Mcts(Agent):
             # If n is zero, return inf
             return np.inf
 
-        return w / float(n) + self.EXPLORATION_PARAMETER * np.sqrt(
-            np.log(N) / float(n))
+        return w / float(n) + self.EXPLORATION_PARAMETER * np.sqrt(np.log(N) / float(n))
 
     def get_static_value(self, game_board):
         """Returns the static value of game_board.
@@ -145,10 +140,8 @@ class Mcts(Agent):
         if (game_board == 0).all():
             return None
 
-        windows = game_board.flatten()[ConnectBoard.WINDOW_INDICES].reshape(
-            -1, 4)
-        uncontested_windows = windows[windows.min(
-            axis=1) != -windows.max(axis=1)]
+        windows = game_board.flatten()[ConnectBoard.WINDOW_INDICES].reshape(-1, 4)
+        uncontested_windows = windows[windows.min(axis=1) != -windows.max(axis=1)]
         if uncontested_windows.size == 0:
             return 0
 
